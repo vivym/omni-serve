@@ -1,13 +1,11 @@
 from typing import List
 
 import numpy as np
-import ray
 from ray import serve
 from ray.serve.dag import InputNode
 from ray.serve.drivers import DAGDriver
 from ray.serve.handle import RayServeDeploymentHandle
 from ray.serve.http_adapters import image_to_ndarray
-from starlette.exceptions import HTTPException
 
 from .preprocessor import PreprocessorDeployment
 from .model import EVAViTDeployment
@@ -15,7 +13,7 @@ from .model import EVAViTDeployment
 
 @serve.deployment(
     num_replicas=1,
-    ray_actor_options={"num_cpus": 4, "num_gpus": 0},
+    ray_actor_options={"num_cpus": 2, "num_gpus": 0},
 )
 class EVAViTIngress:
     def __init__(
@@ -36,7 +34,13 @@ class EVAViTIngress:
         return [results for _ in range(len(images))]
 
     async def inference(self, image: np.ndarray):
-        return await self.batch_inference(image)
+        image_ndarray_ref = await self.preprocessor.remote(image)
+        image_ndarray = await image_ndarray_ref
+
+        task_results_ref = await self.model.remote(image_ndarray)
+        task_results = await task_results_ref
+
+        return task_results
 
 
 with InputNode() as request:

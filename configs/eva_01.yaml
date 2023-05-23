@@ -1,0 +1,37 @@
+import_path: omni_serve.eva_01.ingress:ingress
+
+runtime_env: {}
+
+host: 0.0.0.0
+
+port: 8000
+
+deployments:
+
+- name: PreprocessorDeployment
+  num_replicas: 8
+  user_config:
+    model_name_or_path: ./weights/eva-01-vit
+  ray_actor_options:
+    num_cpus: 2.0
+    num_gpus: 0.0
+
+- name: EVAViTDeployment
+  num_replicas: 2
+  user_config:
+    model_name_or_path: ./weights/eva-01-vit
+    task_head_paths: {
+      "debug": "./weights/debug-head.pt",
+    }
+  ray_actor_options:
+    num_cpus: 4.0
+    num_gpus: 1.0
+
+- name: EVAViTIngress
+  num_replicas: 2
+  ray_actor_options:
+    num_cpus: 2.0
+    num_gpus: 0.0
+
+- name: DAGDriver
+  route_prefix: /
