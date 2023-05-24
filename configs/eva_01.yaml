@@ -21,7 +21,7 @@ deployments:
   user_config:
     model_name_or_path: ./weights/eva-01-vit
     task_head_paths: {
-      "debug": "./weights/debug-head.pt",
+      "debug": "./weights/task_head.pt",
     }
   ray_actor_options:
     num_cpus: 4.0
