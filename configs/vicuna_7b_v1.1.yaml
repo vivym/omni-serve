@@ -1,0 +1,40 @@
+import_path: omni_serve.causal_lm.ingress:dag
+
+runtime_env: {}
+
+host: 0.0.0.0
+
+port: 8000
+
+deployments:
+  - name: ChatPromptTemplateDeployment
+    num_replicas: 8
+    user_config:
+      system_message:
+        - "A chat between a curious user and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the user's questions. "
+      human_name: USER
+      assistant_name: ASSISTANT
+      conversation_template: "{human_name}: {human_content} {assistant_name}: {assistant_content} </s>"
+      tokenizer_name_or_path: ./weights/vicuna-7b-v1.1
+    ray_actor_options:
+      num_cpus: 2.0
+      num_gpus: 0.0
+
+  - name: CausalLMDeployment
+    num_replicas: 1
+    user_config:
+      model_name_or_path: ./weights/vicuna-7b-v1.1
+      stop_ids_list:
+        - [2]
+    ray_actor_options:
+      num_cpus: 4.0
+      num_gpus: 1.0
+
+  - name: CasusalLMTIngress
+    num_replicas: 2
+    ray_actor_options:
+      num_cpus: 2.0
+      num_gpus: 0.0
+
+  - name: DAGDriver
+    route_prefix: /
